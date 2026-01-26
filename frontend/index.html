@@ -1,1 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepX - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="m-0 p-0 bg-white">
+    <!-- Header -->
+    <nav
+        class="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50 transition-all duration-300 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-sm">
+        <div class="text-2xl font-bold text-white pl-8 drop-shadow-md">DeepX</div>
+        <div class="flex gap-6 pr-8 items-center">
+            <button class="text-white/90 hover:text-white font-medium transition-colors text-lg"
+                onclick="handleUploadClick()">Upload</button>
+            <button id="nav-auth-btn"
+                class="bg-white/20 text-white border border-white/30 px-8 py-2.5 rounded-full font-medium hover:bg-white/30 transition-all backdrop-blur-md"
+                onclick="handleAuthClick()">Login</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section
+        class="h-screen bg-gradient-to-b from-[#3F51C1] to-white flex flex-col items-center justify-center relative">
+        <h1 class="text-9xl font-bold text-white mb-6">DeepX</h1>
+        <p class="text-3xl text-white mb-16">Explainable Deepfake Detection</p>
+        <button onclick="document.getElementById('about-section').scrollIntoView({ behavior: 'smooth' })"
+            class="bg-white text-[#3F51C1] px-12 py-4 rounded-xl text-xl font-semibold cursor-pointer transition-all hover:translate-y-[-3px] hover:shadow-[0_15px_35px_rgba(255,255,255,0.5)]">Let's
+            Explore</button>
+    </section>
+
+    <!-- Explore Content Section -->
+    <section id="explore-section" class="min-h-screen bg-white">
+        <!-- Getting Started -->
+        <div class="h-screen flex items-center justify-center border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-8 text-center">
+                <h2 class="text-6xl font-bold text-[#3F51C1] mb-6">Getting Started</h2>
+                <p class="text-2xl text-gray-700 mb-8 leading-relaxed">
+                    DeepX makes it easy to detect deepfakes with cutting-edge AI technology. Our advanced CNN model
+                    combined with Grad-CAM and LIME provides explainable results you can trust.
+                </p>
+                <div class="flex gap-4 justify-center">
+                    <button
+                        class="bg-[#3F51C1] text-white px-10 py-3 rounded-lg font-semibold hover:translate-y-[-2px] transition-all"
+                        onclick="window.location.href='upload.html'">Start Detection</button>
+                    <button
+                        class="border-2 border-[#3F51C1] text-[#3F51C1] px-10 py-3 rounded-lg font-semibold hover:bg-[#50c6d8] hover:text-white transition-all"
+                        onclick="document.getElementById('about-section').scrollIntoView({ behavior: 'smooth' })">Learn
+                        More</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="about-section" class="h-screen flex items-center justify-center border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-8">
+                <h2 class="text-6xl font-bold text-[#3F51C1] mb-8 text-center">About DeepX</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="bg-gradient-to-br from-[#3F51C1]/10 to-transparent p-8 rounded-2xl">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Why DeepX?</h3>
+                        <p class="text-gray-700 text-lg leading-relaxed">
+                            In an era of sophisticated deepfake technology, DeepX provides transparent and explainable
+                            detection. We don't just tell you if a video is fake—we show you why.
+                        </p>
+                    </div>
+                    <div class="bg-gradient-to-br from-[#3F51C1]/10 to-transparent p-8 rounded-2xl">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Our Mission</h3>
+                        <p class="text-gray-700 text-lg leading-relaxed">
+                            To empower users with trustworthy deepfake detection technology that combines
+                            state-of-the-art machine learning with human-interpretable explanations.
+                        </p>
+                    </div>
+                </div>
+                <!-- Added Upload Button in About Section -->
+                <div class="mt-12 text-center">
+                    <button
+                        class="bg-[#3F51C1] text-white px-12 py-4 rounded-xl text-xl font-bold cursor-pointer transition-all hover:translate-y-[-3px] hover:shadow-[0_15px_35px_rgba(80,198,216,0.5)]"
+                        onclick="handleUploadClick()">Start Detection</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div id="how-section" class="h-screen flex items-center justify-center border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-8 w-full">
+                <h2 class="text-6xl font-bold text-[#3F51C1] mb-12 text-center">How It Works</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div
+                        class="bg-[#3F51C1] text-white p-8 rounded-xl text-center hover:shadow-[0_10px_30px_rgba(80,198,216,0.3)] transition-all">
+                        <div class="text-5xl font-bold mb-4">1</div>
+                        <h3 class="text-2xl font-bold mb-3">Upload</h3>
+                        <p class="text-white/90">Upload your video or image file to our secure platform</p>
+                    </div>
+                    <div
+                        class="bg-[#3F51C1] text-white p-8 rounded-xl text-center hover:shadow-[0_10px_30px_rgba(80,198,216,0.3)] transition-all">
+                        <div class="text-5xl font-bold mb-4">2</div>
+                        <h3 class="text-2xl font-bold mb-3">Analyze</h3>
+                        <p class="text-white/90">Our CNN model analyzes the content with advanced algorithms</p>
+                    </div>
+                    <div
+                        class="bg-[#3F51C1] text-white p-8 rounded-xl text-center hover:shadow-[0_10px_30px_rgba(80,198,216,0.3)] transition-all">
+                        <div class="text-5xl font-bold mb-4">3</div>
+                        <h3 class="text-2xl font-bold mb-3">Explainability</h3>
+                        <p class="text-white/90">Get detailed Grad-CAM and LIME explanations of results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Introduction -->
+        <div id="intro-section" class="h-screen flex items-center justify-center">
+            <div class="max-w-4xl mx-auto px-8 text-center">
+                <h2 class="text-6xl font-bold text-[#3F51C1] mb-8">Ready to Detect?</h2>
+                <p class="text-2xl text-gray-700 mb-12 leading-relaxed">
+                    DeepX combines CNN neural networks with interpretable AI techniques to give you confidence in
+                    deepfake detection. Our technology is transparent, reliable, and easy to use.
+                </p>
+                <div
+                    class="bg-gradient-to-r from-[#3F51C1]/20 to-transparent p-12 rounded-2xl border border-[#3F51C1]/30">
+                    <p class="text-xl text-gray-700 mb-8">
+                        <i class="fa-solid fa-magnifying-glass mr-2 text-[#3F51C1]"></i> Advanced Detection •
+                        <i class="fa-solid fa-chart-bar mr-2 text-[#3F51C1]"></i> Visual Explanations •
+                        <i class="fa-solid fa-lock mr-2 text-[#3F51C1]"></i> Secure Processing •
+                        <i class="fa-solid fa-bolt mr-2 text-[#3F51C1]"></i> Fast Results
+                    </p>
+                    <button
+                        class="bg-[#3F51C1] text-white px-16 py-5 rounded-xl text-2xl font-bold cursor-pointer transition-all hover:translate-y-[-3px] hover:shadow-[0_15px_35px_rgba(80,198,216,0.5)]"
+                        onclick="window.location.href='upload.html'">Start Using DeepX</button>
+                </div>
+                <p class="text-gray-500 text-sm mt-12">Powered by CNN + Grad-CAM + LIME</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50 py-12 border-t border-gray-200">
+        <div class="max-w-6xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="text-center md:text-left">
+                <h3 class="text-2xl font-bold text-[#3F51C1] mb-2">DeepX</h3>
+                <p class="text-gray-500">Explainable Deepfake Detection Platform</p>
+            </div>
+            <div class="flex gap-8 text-gray-600">
+                <a href="#" class="hover:text-[#3F51C1] transition-colors">Privacy</a>
+                <a href="#" class="hover:text-[#3F51C1] transition-colors">Terms</a>
+                <a href="#" class="hover:text-[#3F51C1] transition-colors">Contact</a>
+            </div>
+            <div class="text-gray-400 text-sm">
+                &copy; 2024 DeepX. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function handleUploadClick() {
+            if (localStorage.getItem('currentUser')) {
+                window.location.href = 'upload.html';
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function handleAuthClick() {
+            if (localStorage.getItem('currentUser')) {
+                localStorage.removeItem('currentUser');
+                window.location.reload();
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function updateNav() {
+            const btn = document.getElementById('nav-auth-btn');
+            if (localStorage.getItem('currentUser')) {
+                btn.textContent = 'Logout';
+            } else {
+                btn.textContent = 'Login';
+            }
+        }
+
+        // Initial check
+        updateNav();
+    </script>
+</body>
+
+</html>
