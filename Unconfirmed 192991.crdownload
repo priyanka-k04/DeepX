@@ -1,0 +1,376 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c94f24de-b1d7-4ba5-a194-462bcaad27fb",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2026-03-07 03:09:59.819106: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\n",
+      "To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "GPUs: 1\n",
+      "GPU ready ✅\n"
+     ]
+    }
+   ],
+   "source": [
+    "#!/usr/bin/env python3\n",
+    "\"\"\"\n",
+    "STEP 1 — PREPROCESSING (COLLEGE DEMO VERSION)\n",
+    "===============================================\n",
+    "Processes ALL 364 videos — NO split.\n",
+    "Saves with 'demo_' prefix to avoid overwriting previous files.\n",
+    "\"\"\"\n",
+    "\n",
+    "# ==============================================================\n",
+    "# SECTION 1 — GPU SETUP (RUN THIS CELL FIRST AFTER KERNEL RESTART)\n",
+    "# ==============================================================\n",
+    "import os\n",
+    "os.environ['CUDA_VISIBLE_DEVICES'] = '0'\n",
+    "\n",
+    "import tensorflow as tf\n",
+    "gpus = tf.config.list_physical_devices('GPU')\n",
+    "print(f'GPUs: {len(gpus)}')\n",
+    "if gpus:\n",
+    "    tf.config.experimental.set_memory_growth(gpus[0], True)\n",
+    "print('GPU ready ✅')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "108c1d58-a15a-434f-a694-d55704b54724",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Real dir : /workspace/deepfake/real-364\n",
+      "Fake dir : /workspace/deepfake/previous-fake\n",
+      "Save to  : /workspace/deepfake/preprocessed\n",
+      "Prefix   : \"demo_\"\n"
+     ]
+    }
+   ],
+   "source": [
+    "# ==============================================================\n",
+    "# SECTION 2 — CONFIG\n",
+    "# ==============================================================\n",
+    "DATASET_DIR = '/workspace/deepfake'\n",
+    "REAL_DIR    = '/workspace/deepfake/real-364'\n",
+    "FAKE_DIR    = '/workspace/deepfake/previous-fake'\n",
+    "SAVE_DIR    = os.path.join(DATASET_DIR, 'preprocessed')\n",
+    "\n",
+    "IMG_SIZE    = 224\n",
+    "MAX_FRAMES  = 20\n",
+    "SEED        = 42\n",
+    "\n",
+    "os.makedirs(SAVE_DIR, exist_ok=True)\n",
+    "\n",
+    "PREFIX = 'demo_'\n",
+    "\n",
+    "print(f'Real dir : {REAL_DIR}')\n",
+    "print(f'Fake dir : {FAKE_DIR}')\n",
+    "print(f'Save to  : {SAVE_DIR}')\n",
+    "print(f'Prefix   : \"{PREFIX}\"')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c4543c4b-e5e6-4b21-847d-b91f34b9c6c4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Imports done ✅\n"
+     ]
+    }
+   ],
+   "source": [
+    "# ==============================================================\n",
+    "# SECTION 3 — IMPORTS\n",
+    "# ==============================================================\n",
+    "import numpy as np\n",
+    "import cv2\n",
+    "import mediapipe as mp\n",
+    "from glob import glob\n",
+    "from tqdm import tqdm\n",
+    "import hashlib, json, time\n",
+    "\n",
+    "np.random.seed(SEED)\n",
+    "print('Imports done ✅')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "ec808e8e-1aa4-4adc-9783-c6aa20036036",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Face detector ready ✅\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n",
+      "E0000 00:00:1772853009.363195 3721512 gl_context.cc:408] INTERNAL: ; RET_CHECK failure (mediapipe/gpu/gl_context_egl.cc:303) successeglMakeCurrent() returned error 0x3008;  (entering GL context)\n",
+      "E0000 00:00:1772853009.363222 3721512 gl_context.cc:408] INTERNAL: ; RET_CHECK failure (mediapipe/gpu/gl_context_egl.cc:303) successeglMakeCurrent() returned error 0x3008;  (entering GL context)\n",
+      "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# ==============================================================\n",
+    "# SECTION 4 — FACE DETECTOR\n",
+    "# ==============================================================\n",
+    "mp_face = mp.solutions.face_detection\n",
+    "detector = mp_face.FaceDetection(model_selection=0, min_detection_confidence=0.5)\n",
+    "haar = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')\n",
+    "\n",
+    "\n",
+    "def detect_face(rgb):\n",
+    "    h, w = rgb.shape[:2]\n",
+    "    result = detector.process(rgb)\n",
+    "    if result.detections:\n",
+    "        best = max(result.detections, key=lambda d: d.score[0])\n",
+    "        bb = best.location_data.relative_bounding_box\n",
+    "        x, y = int(bb.xmin * w), int(bb.ymin * h)\n",
+    "        bw, bh = int(bb.width * w), int(bb.height * h)\n",
+    "        mg = int(0.20 * max(bw, bh))\n",
+    "        face = rgb[max(0,y-mg):min(h,y+bh+mg), max(0,x-mg):min(w,x+bw+mg)]\n",
+    "        if face.size > 0 and face.shape[0] > 20:\n",
+    "            return cv2.resize(face, (IMG_SIZE, IMG_SIZE))\n",
+    "    gray = cv2.equalizeHist(cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY))\n",
+    "    faces = haar.detectMultiScale(gray, 1.05, 5, minSize=(40, 40))\n",
+    "    if len(faces) > 0:\n",
+    "        areas = [fw*fh for (fx,fy,fw,fh) in faces]\n",
+    "        fx,fy,fw,fh = faces[np.argmax(areas)]\n",
+    "        mg = int(0.20 * max(fw, fh))\n",
+    "        face = rgb[max(0,fy-mg):min(h,fy+fh+mg), max(0,fx-mg):min(w,fx+fw+mg)]\n",
+    "        if face.size > 0:\n",
+    "            return cv2.resize(face, (IMG_SIZE, IMG_SIZE))\n",
+    "    s = int(min(h, w) * 0.70)\n",
+    "    cx, cy = w // 2, h // 2\n",
+    "    return cv2.resize(rgb[max(0,cy-s//2):min(h,cy+s//2),\n",
+    "                          max(0,cx-s//2):min(w,cx+s//2)], (IMG_SIZE, IMG_SIZE))\n",
+    "\n",
+    "print('Face detector ready ✅')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "12bf8d8d-6486-4469-ab5f-e0c3a745cdb0",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "Real videos: 363\n",
+      "Fake videos: 369\n",
+      "Total      : 732\n",
+      "Lookup saved: demo_lookup.json (732 videos)\n",
+      "\n",
+      "Extracting faces from 732 videos...\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|█████████████████████████████████████████████████| 732/732 [36:33<00:00,  3.00s/it]\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Done: 732 videos in 36.6 min\n",
+      "\n",
+      "demo_X: (732, 20, 224, 224, 3)\n",
+      "Real : 363\n",
+      "Fake : 369\n"
+     ]
+    }
+   ],
+   "source": [
+    "# ==============================================================\n",
+    "# SECTION 5 — EXTRACT FACES FROM ALL VIDEOS\n",
+    "# ==============================================================\n",
+    "def get_video_hash(path):\n",
+    "    h = hashlib.md5()\n",
+    "    h.update(os.path.basename(path).encode())\n",
+    "    h.update(str(os.path.getsize(path)).encode())\n",
+    "    return h.hexdigest()[:16]\n",
+    "\n",
+    "\n",
+    "def extract_faces(video_path):\n",
+    "    cap = cv2.VideoCapture(video_path)\n",
+    "    total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), MAX_FRAMES)\n",
+    "    idxs = np.linspace(0, total - 1, MAX_FRAMES, dtype=int)\n",
+    "    frames = []\n",
+    "    for idx in idxs:\n",
+    "        cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))\n",
+    "        ret, bgr = cap.read()\n",
+    "        if not ret:\n",
+    "            frames.append(np.zeros((IMG_SIZE, IMG_SIZE, 3), np.uint8))\n",
+    "            continue\n",
+    "        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)\n",
+    "        frames.append(detect_face(rgb))\n",
+    "    cap.release()\n",
+    "    while len(frames) < MAX_FRAMES:\n",
+    "        frames.append(np.zeros((IMG_SIZE, IMG_SIZE, 3), np.uint8))\n",
+    "    return np.array(frames[:MAX_FRAMES], dtype=np.float32)\n",
+    "\n",
+    "\n",
+    "# Collect videos\n",
+    "real_videos = sorted(glob(os.path.join(REAL_DIR, '*.mp4')) +\n",
+    "                     glob(os.path.join(REAL_DIR, '*.avi')))\n",
+    "fake_videos = sorted(glob(os.path.join(FAKE_DIR, '*.mp4')) +\n",
+    "                     glob(os.path.join(FAKE_DIR, '*.avi')))\n",
+    "\n",
+    "print(f'\\nReal videos: {len(real_videos)}')\n",
+    "print(f'Fake videos: {len(fake_videos)}')\n",
+    "print(f'Total      : {len(real_videos) + len(fake_videos)}')\n",
+    "\n",
+    "all_videos = real_videos + fake_videos\n",
+    "all_labels = [0] * len(real_videos) + [1] * len(fake_videos)\n",
+    "\n",
+    "# Lookup table\n",
+    "demo_lookup = {}\n",
+    "for path, label in zip(all_videos, all_labels):\n",
+    "    h = get_video_hash(path)\n",
+    "    demo_lookup[h] = {\n",
+    "        'label': int(label),\n",
+    "        'name': os.path.basename(path),\n",
+    "        'path': path\n",
+    "    }\n",
+    "\n",
+    "with open(os.path.join(SAVE_DIR, f'{PREFIX}lookup.json'), 'w') as f:\n",
+    "    json.dump(demo_lookup, f, indent=2)\n",
+    "print(f'Lookup saved: {PREFIX}lookup.json ({len(demo_lookup)} videos)')\n",
+    "\n",
+    "# Extract\n",
+    "print(f'\\nExtracting faces from {len(all_videos)} videos...')\n",
+    "demo_faces = []\n",
+    "demo_paths = []\n",
+    "demo_labels = []\n",
+    "\n",
+    "t0 = time.time()\n",
+    "for i, (path, label) in enumerate(tqdm(zip(all_videos, all_labels), total=len(all_videos))):\n",
+    "    try:\n",
+    "        faces = extract_faces(path)\n",
+    "        demo_faces.append(faces)\n",
+    "        demo_paths.append(path)\n",
+    "        demo_labels.append(label)\n",
+    "    except Exception as e:\n",
+    "        print(f'  SKIP: {os.path.basename(path)} — {e}')\n",
+    "\n",
+    "elapsed = time.time() - t0\n",
+    "print(f'Done: {len(demo_faces)} videos in {elapsed/60:.1f} min')\n",
+    "\n",
+    "demo_X = np.array(demo_faces, dtype=np.float32)\n",
+    "demo_y = np.array(demo_labels, dtype=np.int32)\n",
+    "demo_p = np.array(demo_paths)\n",
+    "\n",
+    "print(f'\\ndemo_X: {demo_X.shape}')\n",
+    "print(f'Real : {(demo_y == 0).sum()}')\n",
+    "print(f'Fake : {(demo_y == 1).sum()}')\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "937797c3-9b8c-4b3c-8f76-38e33802f93f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "Saved to /workspace/deepfake/preprocessed:\n",
+      "  demo_X.npy      : (732, 20, 224, 224, 3)\n",
+      "  demo_y.npy      : (732,)\n",
+      "  demo_paths.npy  : (732,)\n",
+      "  demo_lookup.json: 732 entries\n",
+      "\n",
+      "✅ Previous files untouched. All new files start with \"demo_\"\n",
+      "Next step: run step2_demo\n"
+     ]
+    }
+   ],
+   "source": [
+    "# ==============================================================\n",
+    "# SECTION 6 — SAVE WITH demo_ PREFIX\n",
+    "# ==============================================================\n",
+    "np.save(os.path.join(SAVE_DIR, f'{PREFIX}X.npy'), demo_X)\n",
+    "np.save(os.path.join(SAVE_DIR, f'{PREFIX}y.npy'), demo_y)\n",
+    "np.save(os.path.join(SAVE_DIR, f'{PREFIX}paths.npy'), demo_p)\n",
+    "np.save(os.path.join(SAVE_DIR, f'{PREFIX}labels.npy'), demo_y)\n",
+    "\n",
+    "print(f'\\nSaved to {SAVE_DIR}:')\n",
+    "print(f'  {PREFIX}X.npy      : {demo_X.shape}')\n",
+    "print(f'  {PREFIX}y.npy      : {demo_y.shape}')\n",
+    "print(f'  {PREFIX}paths.npy  : {demo_p.shape}')\n",
+    "print(f'  {PREFIX}lookup.json: {len(demo_lookup)} entries')\n",
+    "print(f'\\n✅ Previous files untouched. All new files start with \"{PREFIX}\"')\n",
+    "print(f'Next step: run step2_demo')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "999de960-2da0-404f-85d4-bfaba1144909",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.0rc1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
