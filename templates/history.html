@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepX - Detection History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] text-gray-800 h-screen overflow-hidden m-0 p-0">
+    <div class="flex h-screen relative z-10">
+        <div class="w-72 bg-white/70 backdrop-blur-xl border-r border-white/50 pt-9 flex flex-col justify-between shadow-lg">
+            <div>
+                <div class="text-5xl font-bold text-[#3F51C1] px-8 mb-12">DeepX</div>
+                <div class="flex flex-col gap-2">
+                    <a href="/" class="px-8 py-3.5 text-gray-500 block hover:bg-[#3F51C1]/10 hover:text-[#3F51C1]">
+                        <i class="fa-solid fa-house mr-3 w-5"></i> Home
+                    </a>
+                    <a href="/upload/" class="px-8 py-3.5 text-gray-500 block hover:bg-[#3F51C1]/10 hover:text-[#3F51C1]">
+                        <i class="fa-solid fa-cloud-arrow-up mr-3 w-5"></i> Upload
+                    </a>
+                    <a href="/history/" class="px-8 py-3.5 text-[#3F51C1] bg-[#3F51C1]/10 border-r-4 border-[#3F51C1] font-medium">
+                        <i class="fa-solid fa-clock-rotate-left mr-3 w-5"></i> History
+                    </a>
+                </div>
+            </div>
+            <div class="p-6 border-t border-white/50 bg-white/30 text-xs text-gray-400">
+                Logged in as: <span class="font-bold text-gray-700">Mansi</span>
+            </div>
+        </div>
+
+        <div class="flex-1 p-12 overflow-y-auto">
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <h1 class="text-5xl font-bold mb-4 text-gray-800">Inference Logs</h1>
+                    <p class="text-gray-500 text-lg">Past DeepX detections and XAI analysis results.</p>
+                </div>
+                <button onclick="clearAllHistory()" class="px-6 py-2 bg-red-50 border border-red-200 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center group">
+                    <i class="fa-solid fa-trash-can mr-2 group-hover:animate-bounce"></i> Clear All History
+                </button>
+            </div>
+
+            <div class="bg-white/60 backdrop-blur-md rounded-3xl border border-white/60 shadow-2xl overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-[#3F51C1]/5 text-[#3F51C1] uppercase text-xs font-bold tracking-widest">
+                        <tr>
+                            <th class="px-8 py-6">Timestamp</th>
+                            <th class="px-8 py-6">Media Type</th>
+                            <th class="px-8 py-6">Verdict</th>
+                            <th class="px-8 py-6">Confidence</th>
+                            <th class="px-8 py-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody" class="divide-y divide-gray-100">
+                        <tr id="loadingRow">
+                            <td colspan="5" class="px-8 py-20 text-center">
+                                <i class="fa-solid fa-spinner fa-spin text-3xl text-[#3F51C1] mb-4"></i>
+                                <p class="text-gray-400">Fetching your detection history...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        async function fetchHistory() {
+    try {
+        // IMPORTANT: Added credentials: 'include' to ensure the logged-in 
+        // user's session is sent to the Django backend.
+        const response = await fetch('/api/history/', {
+            method: 'GET',
+            credentials: 'include', // Added this to fix the connection error
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+                
+            }
+        }); 
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+        const tableBody = document.getElementById('historyBody');
+
+        tableBody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="py-20 text-center text-gray-400 italic">No previous records found.</td></tr>`;
+            return;
+        }
+
+        data.forEach(item => {
+            // 1. DATE PARSING (Unchanged)
+            let localTime = "Pending..."; 
+            if (item.timestamp) {
+                const isoString = item.timestamp.replace(' ', 'T');
+                const dateObj = new Date(isoString);
+                if (!isNaN(dateObj.getTime())) {
+                    localTime = dateObj.toLocaleString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', hour12: true,
+                        timeZone: 'Asia/Kolkata' 
+                    });
+                } else { localTime = item.timestamp; }
+            }
+
+            // --- 2. UPDATED SMART VERDICT LOGIC (SYNCED WITH DEEPX BACKEND) ---
+            let rawPrediction = item.prediction || item.verdict || "---";
+            const confidence = parseFloat(item.confidence.toString().replace('%', '')) || 0;
+            const modelSaidReal = rawPrediction.toLowerCase() === 'real';
+            
+            // Apply the 60-64% Noise Buffer: If model said Fake but it's in the margin, it's REAL
+            let finalIsReal = modelSaidReal;
+            if (!modelSaidReal && confidence >= 60 && confidence < 65) {
+                finalIsReal = true;
+            }
+
+            // Determine Label and Style based on the SYNCED result
+            let displayLabel = finalIsReal ? 'REAL' : 'FAKE';
+            let badgeClass = finalIsReal ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
+
+            // Apply "Low Certainty" UI if within the 60-75% range
+            if (confidence >= 60 && confidence <= 75) {
+                const icon = finalIsReal ? 'fa-circle-check' : 'fa-triangle-exclamation';
+                displayLabel = `<i class="fa-solid ${icon} mr-1"></i> ${displayLabel} (MARGINAL)`;
+                badgeClass = 'bg-orange-50 text-orange-600 border border-orange-100';
+            }
+
+            const row = document.createElement('tr');
+            row.className = "hover:bg-white/40 transition-colors group border-b border-gray-100/50";
+            row.innerHTML = `
+                <td class="px-8 py-5 text-sm text-gray-500">${localTime}</td>
+                <td class="px-8 py-5 font-medium text-gray-700 capitalize">${item.media_type || 'Image'}</td>
+                <td class="px-8 py-5">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase inline-flex items-center ${badgeClass}">
+                        ${displayLabel}
+                    </span>
+                </td>
+                <td class="px-8 py-5 font-bold text-[#3F51C1]">
+                    ${item.confidence}${item.confidence.toString().includes('%') ? '' : '%'}
+                </td>
+                <td class="px-8 py-5">
+                    <button class="view-btn text-[#3F51C1] hover:underline text-sm font-bold flex items-center">
+                        View Report <i class="fa-solid fa-arrow-right-long ml-2 opacity-0 group-hover:opacity-100 transition-all"></i>
+                    </button>
+                </td>
+            `;
+            
+            row.querySelector('.view-btn').onclick = () => {
+                const standardizedData = {
+                    prediction: finalIsReal ? "Real" : "Fake", 
+                    confidence: item.confidence || "0%",
+                    heatmap_url: item.heatmap_url || item.heatmap || "",
+                    media_type: item.media_type || "image"
+                };
+
+                localStorage.setItem('last_analysis', JSON.stringify(standardizedData));
+    
+                const queryParams = new URLSearchParams({
+                    prediction: standardizedData.prediction,
+                    confidence: standardizedData.confidence.toString().replace('%', ''),
+                    heatmap_url: standardizedData.heatmap_url,
+                    media_type: standardizedData.media_type
+                }).toString();
+
+                window.location.href = `/results/?${queryParams}`; 
+            };
+            
+            tableBody.appendChild(row);
+        });
+        console.log("DeepX: History Table Sync Complete (Asia/Kolkata).");
+
+    } catch (error) {
+        console.error('DeepX History Error:', error);
+        const errorMsg = "Unable to reach DeepX Server. Is Django running?";
+        document.getElementById('historyBody').innerHTML = `<tr><td colspan="5" class="py-20 text-center text-red-500 font-medium">${errorMsg}</td></tr>`;
+    }
+}
+    async function clearAllHistory() {
+    if (!confirm("Are you sure you want to clear all history? This cannot be undone.")) return;
+
+    try {
+        // Double check this URL matches your urls.py path!
+        const response = await fetch('/api/history/', { 
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 204) {
+            alert("History cleared successfully!");
+            // Re-fetch the data or reload the page to update the UI
+            location.reload(); 
+        } else {
+            const data = await response.json();
+            alert("Error: " + (data.error || "Could not clear history"));
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        alert("Network error. Please check if the server is running.");
+    }
+}    
+    window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        const lastAnalysis = JSON.parse(localStorage.getItem('last_analysis') || '{}');
+
+        // GET THE HEATMAP URL
+        const finalHeatmap = params.get('heatmap_url') || lastAnalysis.heatmap_url;
+
+        if (finalHeatmap) {
+            const heatmapImg = document.getElementById('heatmapImage'); // Ensure this ID exists
+            if (heatmapImg) {
+                heatmapImg.src = finalHeatmap;
+                heatmapImg.style.display = 'block';
+            }
+        }
+    };
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchHistory);
+    </script>
+</body>
+</html>
