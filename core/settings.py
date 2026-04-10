@@ -162,8 +162,8 @@ REST_FRAMEWORK = {
 FILE_UPLOAD_PERMISSIONS = 0o644
 # Email Configuration (using Gmail as an example)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
+EMAIL_HOST = ''
+EMAIL_PORT = 
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'mansi.singh10211@gmail.com' # Your Gmail
-EMAIL_HOST_PASSWORD = 'bhskjcfjwgyjfsev' # Not your login pass, a Gmail "App Password"
+EMAIL_HOST_USER = '' # Your Gmail
+EMAIL_HOST_PASSWORD = '' # Not your login pass, a Gmail "App Password"
