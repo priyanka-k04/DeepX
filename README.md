@@ -70,11 +70,11 @@ to represent important audio patterns.
 
 ### Analysis Result
 
-![DeepX Result](screenshots/result.png)
+![DeepX Result](screenshots/1report.png)
 
 ### Explainability
 
-![DeepX Explainability](screenshots/explainability.png)
+![DeepX Explainability](screenshots/report.png)
 
 ### Detection History
 
