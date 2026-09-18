@@ -1,84 +1,119 @@
-🎭 DeepX – Deepfake Video Detection System
+# 🎭 DeepX — Explainable Deepfake Detection System
 
-DeepX is a deep learning–based **Deepfake Video Detection project** that detects whether a given video is **REAL or FAKE** and provides **visual explainability** using CNN-based attention (Grad-CAM–style heatmaps).
+DeepX is a deep learning-powered web application that detects whether
+images, videos, and audio are real or fake.
 
-This project focuses on **both accuracy and explainability**, making the model’s decisions interpretable for users.
+The system combines deep learning models, preprocessing pipelines,
+explainable AI, and a Django web interface to provide an end-to-end
+deepfake detection system.
 
-
-## Project Overview
-
-Deepfake videos are artificially generated or manipulated videos that can spread misinformation and cause serious harm.  
-DeepX aims to detect such videos by:
-
-- Extracting face frames from videos
-- Learning spatial features using a pre-trained CNN
-- Learning temporal patterns across frames using LSTM
-- Providing explainability heatmaps to highlight suspicious regions
-
-
-## Model Architecture for video
-Video → Face Frames → CNN (Xception) → Feature Vectors
-→ LSTM → Binary Classification (Real / Fake)
-
-
-
-### Key Components:
-- **Face Detection:** MTCNN + Haar Cascade (fallback)
-- **Feature Extraction:** Pre-trained Xception (ImageNet)
-- **Temporal Modeling:** LSTM
-- **Classification:** Sigmoid-based binary output
-- **Explainability:** CNN activation-based Grad-CAM heatmaps
-
-
-## Technologies Used
-
-- **Python**
-- **TensorFlow & Keras**
-- **OpenCV**
-- **MTCNN**
-- **NumPy**
-- **Matplotlib**
-- **Google Colab**
-- **GitHub**
+> **Note:** DeepX is currently available as a local Django application.
+> A public live demo is not currently hosted.
 
 ---
 
-## Dataset
+## ✨ Key Features
 
-- Trained on **real and fake videos** (balanced dataset)
-- Each video is processed into **30 face frames**
-- Faces are resized to **299 × 299** pixels
-- Dataset can be replaced with:
-  - FaceForensics++
-  - DFDC
-  - Custom datasets
+- 🖼️ Image Deepfake Detection
+- 🎥 Video Deepfake Detection
+- 🎵 Audio Deepfake Detection
+- 📊 Real/Fake Prediction with Confidence Score
+- 🔍 Explainable AI using Grad-CAM
+- 📈 Visual Feature Attribution
+- 👤 User Registration and Login
+- 📜 Detection History
+- 🌐 Django-based Web Interface
 
+---
 
-## Explainability (Grad-CAM)
+## 🧠 How It Works
 
-The project provides **visual explanations** for predictions:
+### Image Detection
 
-- Highlights **suspicious facial regions**
-- Helps understand *why* a frame is classified as fake
-- Displays explainability for **selected frames only** (user-friendly)
+Image → Preprocessing → ResNet50 → Real/Fake Prediction → Grad-CAM
 
-> Note: Since the final decision is made by an LSTM, explainability is generated using **CNN activation-based attention maps**.
+### Video Detection
 
+Video → Frame Extraction → Face Processing → CNN Features
+→ LSTM/BiLSTM → Real/Fake Prediction
 
-## Output Example
+### Audio Detection
 
-- **Prediction:** REAL / DEEPFAKE  
-- **Confidence Score:** Percentage  
-- **Explainability:** Heatmaps over facial regions  
+Audio → MFCC + Chroma + Mel Features → Neural Network
+→ Real/Fake Prediction
 
+---
 
-## How to Run
+## 🔍 Explainable AI
 
-1. Clone the repository:
-   git clone https://github.com/your-username/DeepX.git
+DeepX does not only provide a prediction.
 
+It also provides visual information about the model's decision.
 
-📜 License
-This project is for educational and research purposes only.
+For image and video analysis, Grad-CAM-based heatmaps are used to
+highlight regions that contribute to the prediction.
 
+For audio analysis, spectrogram-based visualizations are generated
+to represent important audio patterns.
 
+---
+
+## 🖥️ Application Screenshots
+
+### Home Page
+
+![DeepX Home](screenshots/home.png)
+
+### Upload Media
+
+![DeepX Upload](screenshots/upload.png)
+
+### Analysis Result
+
+![DeepX Result](screenshots/result.png)
+
+### Explainability
+
+![DeepX Explainability](screenshots/explainability.png)
+
+### Detection History
+
+![DeepX History](screenshots/history.png)
+
+---
+
+## 🛠️ Technologies Used
+
+- Python
+- Django
+- Django REST Framework
+- TensorFlow / Keras
+- OpenCV
+- NumPy
+- Librosa
+- SQLite
+- Jupyter Notebook
+- Grad-CAM
+- CNN
+- ResNet50
+- LSTM / BiLSTM
+
+---
+
+## 📁 Project Structure
+
+```text
+DeepX/
+│
+├── Audio Model/
+├── Image model/
+├── deepfake-video-detection-model/
+├── core/
+├── detection/
+├── templates/
+├── media/
+├── output/
+├── manage.py
+├── db.sqlite3
+├── requirements.txt
+└── README.md
