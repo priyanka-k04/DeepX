@@ -14,19 +14,19 @@ deepfake detection system.
 
 ## ✨ Key Features
 
-- 🖼️ Image Deepfake Detection
-- 🎥 Video Deepfake Detection
-- 🎵 Audio Deepfake Detection
-- 📊 Real/Fake Prediction with Confidence Score
-- 🔍 Explainable AI using Grad-CAM
-- 📈 Visual Feature Attribution
-- 👤 User Registration and Login
-- 📜 Detection History
-- 🌐 Django-based Web Interface
+-  Image Deepfake Detection
+-  Video Deepfake Detection
+-  Audio Deepfake Detection
+-  Real/Fake Prediction with Confidence Score
+-  Explainable AI using Grad-CAM
+-  Visual Feature Attribution
+-  User Registration and Login
+-  Detection History
+-  Django-based Web Interface
 
 ---
 
-## 🧠 How It Works
+##  How It Works
 
 ### Image Detection
 
@@ -44,7 +44,7 @@ Audio → MFCC + Chroma + Mel Features → Neural Network
 
 ---
 
-## 🔍 Explainable AI
+##  Explainable AI
 
 DeepX does not only provide a prediction.
 
@@ -58,7 +58,7 @@ to represent important audio patterns.
 
 ---
 
-## 🖥️ Application Screenshots
+##  Application Screenshots
 
 ### Home Page
 
